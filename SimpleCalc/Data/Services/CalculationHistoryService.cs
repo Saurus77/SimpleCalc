@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SimpleCalc.Data.Models;
 
-namespace SimpleCalc.Data.Models
+namespace SimpleCalc.Data.Services
 {
-    internal static class CalculationHistoryLogic
+    internal static class CalculationHistoryService
     {
         public static void AddToHistory(string expression, double result)
         {

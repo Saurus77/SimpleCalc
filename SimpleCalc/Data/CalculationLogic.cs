@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SimpleCalc.Data.Models;
+using SimpleCalc.Data.Services;
 
 namespace SimpleCalc.Data
 {
@@ -149,7 +149,7 @@ namespace SimpleCalc.Data
             double result = numbersStack.Pop();
             
             // Send calculation details to database
-            CalculationHistoryLogic.AddToHistory(ExpressionHolder.Expression, result);
+            CalculationHistoryService.AddToHistory(ExpressionHolder.Expression, result);
 
             return result;
 

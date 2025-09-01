@@ -53,17 +53,26 @@
             NumberKey_8 = new Button();
             NumberKey_7 = new Button();
             MainCalculatorPanel = new Panel();
+            MainCurrencyConversionPanel = new Panel();
+            Convert_Btn = new Button();
+            CurrencyRateLabel = new Label();
+            CurrencyCodesComboBox = new ComboBox();
+            endDateLabel = new Label();
+            startDateLabel = new Label();
+            CurrencyConversionCalendar = new MonthCalendar();
             DisplayPanel = new Panel();
             ResultDisplay_Label = new Label();
             ExpressionDisplay_Label = new Label();
             menuStrip1 = new MenuStrip();
             ToolMenu_Strip = new ToolStripMenuItem();
             Menu_Strip_History = new ToolStripMenuItem();
+            Menu_Strip_Conversion = new ToolStripMenuItem();
             Parentheses_Panel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)HistoryDataGrid).BeginInit();
             BasicOperationsPanel.SuspendLayout();
             NumberKeysPanel.SuspendLayout();
             MainCalculatorPanel.SuspendLayout();
+            MainCurrencyConversionPanel.SuspendLayout();
             DisplayPanel.SuspendLayout();
             menuStrip1.SuspendLayout();
             SuspendLayout();
@@ -73,7 +82,7 @@
             Parentheses_Panel.Controls.Add(BackSpace_Btn);
             Parentheses_Panel.Controls.Add(Right_Parentheses_Btn);
             Parentheses_Panel.Controls.Add(Left_Parentheses_Btn);
-            Parentheses_Panel.Location = new Point(3, 87);
+            Parentheses_Panel.Location = new Point(3, 178);
             Parentheses_Panel.Name = "Parentheses_Panel";
             Parentheses_Panel.Size = new Size(171, 57);
             Parentheses_Panel.TabIndex = 3;
@@ -119,11 +128,11 @@
             HistoryDataGrid.AllowUserToResizeRows = false;
             HistoryDataGrid.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
             HistoryDataGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            HistoryDataGrid.Location = new Point(0, 222);
+            HistoryDataGrid.Location = new Point(0, 139);
             HistoryDataGrid.Name = "HistoryDataGrid";
             HistoryDataGrid.ReadOnly = true;
             HistoryDataGrid.SelectionMode = DataGridViewSelectionMode.CellSelect;
-            HistoryDataGrid.Size = new Size(369, 375);
+            HistoryDataGrid.Size = new Size(369, 458);
             HistoryDataGrid.TabIndex = 2;
             HistoryDataGrid.Visible = false;
             HistoryDataGrid.CellFormatting += HistoryDataGridCellFormatting;
@@ -135,7 +144,7 @@
             BasicOperationsPanel.Controls.Add(Subtract_Key);
             BasicOperationsPanel.Controls.Add(Multiply_Key);
             BasicOperationsPanel.Controls.Add(Divide_Key);
-            BasicOperationsPanel.Location = new Point(174, 87);
+            BasicOperationsPanel.Location = new Point(174, 178);
             BasicOperationsPanel.Name = "BasicOperationsPanel";
             BasicOperationsPanel.Size = new Size(57, 282);
             BasicOperationsPanel.TabIndex = 2;
@@ -208,7 +217,7 @@
             NumberKeysPanel.Controls.Add(NumberKey_9);
             NumberKeysPanel.Controls.Add(NumberKey_8);
             NumberKeysPanel.Controls.Add(NumberKey_7);
-            NumberKeysPanel.Location = new Point(3, 143);
+            NumberKeysPanel.Location = new Point(3, 234);
             NumberKeysPanel.Name = "NumberKeysPanel";
             NumberKeysPanel.Size = new Size(171, 226);
             NumberKeysPanel.TabIndex = 0;
@@ -347,13 +356,78 @@
             // 
             // MainCalculatorPanel
             // 
+            MainCalculatorPanel.Controls.Add(MainCurrencyConversionPanel);
             MainCalculatorPanel.Controls.Add(Parentheses_Panel);
             MainCalculatorPanel.Controls.Add(BasicOperationsPanel);
             MainCalculatorPanel.Controls.Add(NumberKeysPanel);
-            MainCalculatorPanel.Location = new Point(0, 222);
+            MainCalculatorPanel.Location = new Point(0, 136);
             MainCalculatorPanel.Name = "MainCalculatorPanel";
-            MainCalculatorPanel.Size = new Size(369, 375);
+            MainCalculatorPanel.Size = new Size(369, 461);
             MainCalculatorPanel.TabIndex = 0;
+            // 
+            // MainCurrencyConversionPanel
+            // 
+            MainCurrencyConversionPanel.Controls.Add(Convert_Btn);
+            MainCurrencyConversionPanel.Controls.Add(CurrencyRateLabel);
+            MainCurrencyConversionPanel.Controls.Add(CurrencyCodesComboBox);
+            MainCurrencyConversionPanel.Controls.Add(endDateLabel);
+            MainCurrencyConversionPanel.Controls.Add(startDateLabel);
+            MainCurrencyConversionPanel.Controls.Add(CurrencyConversionCalendar);
+            MainCurrencyConversionPanel.Location = new Point(3, 3);
+            MainCurrencyConversionPanel.Name = "MainCurrencyConversionPanel";
+            MainCurrencyConversionPanel.Size = new Size(363, 173);
+            MainCurrencyConversionPanel.TabIndex = 4;
+            // 
+            // Convert_Btn
+            // 
+            Convert_Btn.Location = new Point(277, 127);
+            Convert_Btn.Name = "Convert_Btn";
+            Convert_Btn.Size = new Size(86, 40);
+            Convert_Btn.TabIndex = 5;
+            Convert_Btn.Text = "Convert";
+            Convert_Btn.UseVisualStyleBackColor = true;
+            Convert_Btn.Click += Convert_Btn_Click;
+            // 
+            // CurrencyRateLabel
+            // 
+            CurrencyRateLabel.BorderStyle = BorderStyle.FixedSingle;
+            CurrencyRateLabel.Location = new Point(277, 102);
+            CurrencyRateLabel.Name = "CurrencyRateLabel";
+            CurrencyRateLabel.Size = new Size(86, 22);
+            CurrencyRateLabel.TabIndex = 4;
+            // 
+            // CurrencyCodesComboBox
+            // 
+            CurrencyCodesComboBox.FormattingEnabled = true;
+            CurrencyCodesComboBox.Location = new Point(277, 76);
+            CurrencyCodesComboBox.Name = "CurrencyCodesComboBox";
+            CurrencyCodesComboBox.Size = new Size(86, 23);
+            CurrencyCodesComboBox.TabIndex = 3;
+            CurrencyCodesComboBox.SelectedIndexChanged += CurrencyCodesComboBox_SelectedIndexChanged;
+            // 
+            // endDateLabel
+            // 
+            endDateLabel.BorderStyle = BorderStyle.FixedSingle;
+            endDateLabel.Location = new Point(277, 36);
+            endDateLabel.Name = "endDateLabel";
+            endDateLabel.Size = new Size(86, 26);
+            endDateLabel.TabIndex = 2;
+            // 
+            // startDateLabel
+            // 
+            startDateLabel.BorderStyle = BorderStyle.FixedSingle;
+            startDateLabel.Location = new Point(277, 5);
+            startDateLabel.Name = "startDateLabel";
+            startDateLabel.Size = new Size(86, 22);
+            startDateLabel.TabIndex = 1;
+            // 
+            // CurrencyConversionCalendar
+            // 
+            CurrencyConversionCalendar.Location = new Point(6, 5);
+            CurrencyConversionCalendar.MaxSelectionCount = 1;
+            CurrencyConversionCalendar.Name = "CurrencyConversionCalendar";
+            CurrencyConversionCalendar.TabIndex = 0;
+            CurrencyConversionCalendar.DateSelected += CurrencyConversionCalendar_DateSelected;
             // 
             // DisplayPanel
             // 
@@ -398,7 +472,7 @@
             // 
             // ToolMenu_Strip
             // 
-            ToolMenu_Strip.DropDownItems.AddRange(new ToolStripItem[] { Menu_Strip_History });
+            ToolMenu_Strip.DropDownItems.AddRange(new ToolStripItem[] { Menu_Strip_History, Menu_Strip_Conversion });
             ToolMenu_Strip.Name = "ToolMenu_Strip";
             ToolMenu_Strip.Size = new Size(50, 20);
             ToolMenu_Strip.Text = "Menu";
@@ -406,17 +480,24 @@
             // Menu_Strip_History
             // 
             Menu_Strip_History.Name = "Menu_Strip_History";
-            Menu_Strip_History.Size = new Size(112, 22);
+            Menu_Strip_History.Size = new Size(180, 22);
             Menu_Strip_History.Text = "History";
             Menu_Strip_History.Click += Menu_Strip_History_Click;
+            // 
+            // Menu_Strip_Conversion
+            // 
+            Menu_Strip_Conversion.Name = "Menu_Strip_Conversion";
+            Menu_Strip_Conversion.Size = new Size(180, 22);
+            Menu_Strip_Conversion.Text = "Conversion";
+            Menu_Strip_Conversion.Click += Menu_Strip_Conversion_Click;
             // 
             // Form1
             // 
             ClientSize = new Size(370, 597);
-            Controls.Add(HistoryDataGrid);
-            Controls.Add(MainCalculatorPanel);
             Controls.Add(menuStrip1);
             Controls.Add(DisplayPanel);
+            Controls.Add(MainCalculatorPanel);
+            Controls.Add(HistoryDataGrid);
             KeyPreview = true;
             MainMenuStrip = menuStrip1;
             Name = "Form1";
@@ -427,6 +508,7 @@
             BasicOperationsPanel.ResumeLayout(false);
             NumberKeysPanel.ResumeLayout(false);
             MainCalculatorPanel.ResumeLayout(false);
+            MainCurrencyConversionPanel.ResumeLayout(false);
             DisplayPanel.ResumeLayout(false);
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
@@ -466,5 +548,13 @@
         private Button Left_Parentheses_Btn;
         private Panel MainCalculatorPanel;
         private DataGridView HistoryDataGrid;
+        private Panel MainCurrencyConversionPanel;
+        private MonthCalendar CurrencyConversionCalendar;
+        private Label endDateLabel;
+        private Label startDateLabel;
+        private Label CurrencyRateLabel;
+        private ComboBox CurrencyCodesComboBox;
+        private Button Convert_Btn;
+        private ToolStripMenuItem Menu_Strip_Conversion;
     }
 }

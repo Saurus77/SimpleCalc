@@ -5,21 +5,45 @@ using System.Text;
 using System.Windows.Input;
 using Microsoft.VisualBasic.Devices;
 using SimpleCalc.Data;
-using SimpleCalc.Data.Models;
+using SimpleCalc.Data.Services;
 
 namespace SimpleCalc
 {
     public partial class Form1 : Form
     {
+        private readonly SimpleCalcDbContext _dbContext;
+        private readonly CurrencyRatesService _currencyRatesService;
+
         public Form1()
         {
             InitializeComponent();
+
+            _dbContext = new SimpleCalcDbContext();
+            _currencyRatesService = new CurrencyRatesService(_dbContext);
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private async void Form1_Load(object sender, EventArgs e)
         {
             SetupHistoryGrid();
-            CalculationHistoryLogic.LoadHistory(HistoryDataGrid);
+            CalculationHistoryService.LoadHistory(HistoryDataGrid);
+            await CurrencyRatesService.LoadCurrencyCodesToComboBoxAsync(CurrencyCodesComboBox);
+
+            string defaultCurrency = "EUR";
+   
+            CurrencyCodesComboBox.SelectedItem = defaultCurrency;
+  
+
+            await _currencyRatesService.FetchAndSaveCurrencyRatesAsync(defaultCurrency, DateTime.Today, DateTime.Today);
+
+            string defaultStartEndDate = DateTime.Today.ToString("yyyy-MM-dd");
+            startDateLabel.Text = defaultStartEndDate;
+            endDateLabel.Text = defaultStartEndDate;
+            var bestRate = _currencyRatesService.GetBestRate(defaultCurrency, DateTime.Parse(startDateLabel.Text), DateTime.Parse(endDateLabel.Text));
+            CurrencyRateLabel.Text = bestRate.Rate.ToString();
+ 
+
+
+
         }
 
 
@@ -74,7 +98,6 @@ namespace SimpleCalc
 
         private void HistoryDataGridCellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-          
             e.CellStyle.BackColor = Color.Black;
             e.CellStyle.ForeColor = Color.White;
         }
@@ -85,9 +108,10 @@ namespace SimpleCalc
         {
             if (!HistoryDataGrid.Visible)
             {
-                CalculationHistoryLogic.LoadHistory(HistoryDataGrid);
+                CalculationHistoryService.LoadHistory(HistoryDataGrid);
                 HistoryDataGrid.Visible = true;
                 MainCalculatorPanel.Visible = false;
+                MainCurrencyConversionPanel.Visible = false;
             }
             else
             {
@@ -110,12 +134,15 @@ namespace SimpleCalc
         {
             foreach (Control control in parent.Controls)
             {
-                control.MouseUp += (s, e) => ActiveControl = null;
-                control.TabStop = false;
-
-                if (control.HasChildren)
+                if (!(control is ComboBox))
                 {
-                    PreventFocusChange(control);
+                    control.MouseUp += (s, e) => ActiveControl = null;
+                    control.TabStop = false;
+
+                    if (control.HasChildren)
+                    {
+                        PreventFocusChange(control);
+                    }
                 }
             }
         }
@@ -131,7 +158,7 @@ namespace SimpleCalc
                 if (ExpressionHolder.Operators.Contains(button.Text))
                 {
                     ExpressionHolder.CheckFirstChar(ExpressionHolder.Expression, button.Text);
-                    
+
                     if (WasResultPressed)
                     {
                         ExpressionHolder.Expression = ResultDisplay_Label.Text;
@@ -275,16 +302,16 @@ namespace SimpleCalc
 
             // Paste expression
 
-            if(e.Control && e.KeyCode == Keys.V)
+            if (e.Control && e.KeyCode == Keys.V)
             {
                 if (Clipboard.ContainsText())
                 {
-                    if(Clipboard.GetText().All(c => ("0123456789()., " + ExpressionHolder.Operators).Contains(c)))
+                    if (Clipboard.GetText().All(c => ("0123456789()., " + ExpressionHolder.Operators).Contains(c)))
                     {
                         ExpressionHolder.Expression = Clipboard.GetText().Trim();
                         ExpressionDisplay_Label.Text = ExpressionHolder.Expression;
                         e.Handled = true;
-                     
+
                     }
                     else
                     {
@@ -362,9 +389,93 @@ namespace SimpleCalc
             }
         }
 
-        private void HistoryDataGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private bool selectingStart = true;
+        private async void CurrencyConversionCalendar_DateSelected(object sender, DateRangeEventArgs e)
         {
+            if (selectingStart)
+            {
+                if (e.Start > DateTime.Today || e.Start > DateTime.Parse(endDateLabel.Text))
+                {
+                    return;
+                }
+                startDateLabel.Text = e.Start.ToString("yyyy-MM-dd");
+                endDateLabel.Text = DateTime.Today.ToString("yyyy-MM-dd");
+                RefreshBestRate();
+            }
+            else
+            {
+                if (e.End > DateTime.Today || e.End < DateTime.Parse(startDateLabel.Text))
+                {
+                    return;
+                }
+                endDateLabel.Text = e.End.ToString("yyyy-MM-dd");
+                RefreshBestRate();
+            }
 
+            selectingStart = !selectingStart;
+        }
+
+        private async void CurrencyCodesComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            RefreshBestRate();
+        }
+
+        private async void RefreshBestRate()
+        {
+            if (CurrencyCodesComboBox.SelectedItem == null)
+            {
+                return;
+            }
+
+            string selectedCode = CurrencyCodesComboBox.SelectedItem.ToString();
+
+            if (DateTime.TryParse(startDateLabel.Text, out DateTime start) &&
+                DateTime.TryParse(endDateLabel.Text, out DateTime end))
+            {
+                await _currencyRatesService.FetchAndSaveCurrencyRatesAsync(selectedCode, start, end);
+                var bestRate = _currencyRatesService.GetBestRate(selectedCode, start, end);
+                CurrencyRateLabel.Text = bestRate.Rate.ToString();
+            }
+        }
+
+        private void Convert_Btn_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(ExpressionHolder.Expression))
+            {
+                return;
+            }
+            // Try catch to catch all exceptions thrown
+            try
+            {
+                // Empty label and append calculated result
+                ExpressionHolder.Expression = ExpressionDisplay_Label.Text;
+                ResultDisplay_Label.Text = string.Empty;
+                double preppedValue = ExpressionHolder.CalculateResult(ExpressionHolder.Expression);
+                double convertedValue = preppedValue * (double.Parse(CurrencyRateLabel.Text));
+                ResultDisplay_Label.Text = convertedValue.ToString("F2");
+            }
+            catch (Exception ex)
+            {
+                // Display exception message
+                string errorMessage = ex.Message;
+                ExpressionDisplay_Label.Text = errorMessage;
+            }
+        }
+
+        private void Menu_Strip_Conversion_Click(object sender, EventArgs e)
+        {
+            if (!MainCurrencyConversionPanel.Visible)
+            {
+                HistoryDataGrid.Visible = false;
+                MainCalculatorPanel.Visible = true;
+                MainCurrencyConversionPanel.Visible = true;
+            }
+            else
+            {
+                HistoryDataGrid.Visible = false;
+                MainCalculatorPanel.Visible = true;
+                MainCurrencyConversionPanel.Visible = false;
+            }
         }
     }
 }
