@@ -1,4 +1,11 @@
+using System;
+using System.Drawing.Text;
+using System.Linq.Expressions;
+using System.Text;
+using System.Windows.Input;
+using Microsoft.VisualBasic.Devices;
 using SimpleCalc.Data;
+using SimpleCalc.Data.Models;
 
 namespace SimpleCalc
 {
@@ -11,27 +18,353 @@ namespace SimpleCalc
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            SetupHistoryGrid();
+            CalculationHistoryLogic.LoadHistory(HistoryDataGrid);
         }
+
 
         private void MainCalculatorPanel_Paint(object sender, PaintEventArgs e)
         {
 
         }
 
-        private void Form1_Load_1(object sender, EventArgs e)
+
+
+        private void CopySelectedCells()
         {
+            if (HistoryDataGrid.SelectedCells.Count > 0)
+            {
+                // Group cells by row index to preserve row structure
+                var rows = HistoryDataGrid.SelectedCells
+                    .Cast<DataGridViewCell>()
+                    .GroupBy(c => c.RowIndex)
+                    .OrderBy(g => g.Key);
+
+                var sb = new StringBuilder();
+
+                foreach (var row in rows)
+                {
+                    // Order cells by column index
+                    var cells = row.OrderBy(c => c.ColumnIndex);
+                    sb.AppendLine(string.Join("\t", cells.Select(c => c.Value?.ToString() ?? "")));
+                }
+
+                Clipboard.SetText(sb.ToString());
+            }
+        }
+
+        private void SetupHistoryGrid()
+        {
+            HistoryDataGrid.Columns.Clear();
+
+            HistoryDataGrid.Columns.Add("Expression", "Expression");
+            HistoryDataGrid.Columns.Add("Result", "Result");
+            HistoryDataGrid.Columns.Add("Date", "Date");
+
+            HistoryDataGrid.RowHeadersDefaultCellStyle.BackColor = Color.DarkGray;
+            HistoryDataGrid.RowHeadersDefaultCellStyle.ForeColor = Color.White;
+
+            HistoryDataGrid.ColumnHeadersDefaultCellStyle.BackColor = Color.DarkGray;
+            HistoryDataGrid.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+
+            HistoryDataGrid.EnableHeadersVisualStyles = false;
+
+            HistoryDataGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        }
+
+        private void HistoryDataGridCellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+          
+            e.CellStyle.BackColor = Color.Black;
+            e.CellStyle.ForeColor = Color.White;
+        }
+
+
+        // Logic for showing/hiding history panel
+        private void Menu_Strip_History_Click(object sender, EventArgs e)
+        {
+            if (!HistoryDataGrid.Visible)
+            {
+                CalculationHistoryLogic.LoadHistory(HistoryDataGrid);
+                HistoryDataGrid.Visible = true;
+                MainCalculatorPanel.Visible = false;
+            }
+            else
+            {
+                HistoryDataGrid.Visible = false;
+                MainCalculatorPanel.Visible = true;
+            }
+        }
+
+        // Logic to bind focus to main window on start
+        protected override void OnShown(EventArgs e)
+        {
+            ActiveControl = null;
+            PreventFocusChange(this);
+            base.OnShown(e);
+        }
+
+        // Logic to prevent focus changes on mouse clicks
+        // and disable tab switch on all elements
+        private void PreventFocusChange(Control parent)
+        {
+            foreach (Control control in parent.Controls)
+            {
+                control.MouseUp += (s, e) => ActiveControl = null;
+                control.TabStop = false;
+
+                if (control.HasChildren)
+                {
+                    PreventFocusChange(control);
+                }
+            }
+        }
+
+
+        // A method to send button/key values to expression holder variable
+        // and show contents in display label
+        private void UniversalKey_Click(object sender, EventArgs e)
+        {
+            if (sender is Button button)
+            {
+                Console.WriteLine(ExpressionHolder.Expression);
+                if (ExpressionHolder.Operators.Contains(button.Text))
+                {
+                    ExpressionHolder.CheckFirstChar(ExpressionHolder.Expression, button.Text);
+                    
+                    if (WasResultPressed)
+                    {
+                        ExpressionHolder.Expression = ResultDisplay_Label.Text;
+                        WasResultPressed = false;
+                    }
+                    Console.WriteLine("not a number");
+
+
+                    ExpressionHolder.Expression =
+                        ExpressionHolder.CheckLastChar(ExpressionHolder.Expression, button.Text);
+                    Console.WriteLine(ExpressionHolder.Expression);
+                    ExpressionDisplay_Label.Text = ExpressionHolder.Expression;
+
+                }
+                else
+                {
+                    Console.WriteLine("a number");
+                    if (WasResultPressed)
+                    {
+                        ExpressionHolder.Expression = string.Empty;
+                        WasResultPressed = false;
+                    }
+                    ExpressionHolder.Expression += button.Text;
+                    Console.WriteLine(ExpressionHolder.Expression);
+                    ExpressionDisplay_Label.Text = ExpressionHolder.Expression;
+                }
+
+
+            }
+        }
+
+        // Method for keyboard binding
+        private void UniversalKeyDown_Click(object sender, KeyEventArgs e)
+        {
+            switch (e.KeyCode)
+            {
+                // Number keys 0-9
+                case Keys.D1:
+                case Keys.NumPad1:
+                    NumberKey_1.PerformClick();
+                    break;
+
+                case Keys.D2:
+                case Keys.NumPad2:
+                    NumberKey_2.PerformClick();
+                    break;
+
+                case Keys.D3:
+                case Keys.NumPad3:
+                    NumberKey_3.PerformClick();
+                    break;
+
+                case Keys.D4:
+                case Keys.NumPad4:
+                    NumberKey_4.PerformClick();
+                    break;
+
+                case Keys.D5:
+                case Keys.NumPad5:
+                    NumberKey_5.PerformClick();
+                    break;
+
+                case Keys.D6:
+                case Keys.NumPad6:
+                    NumberKey_6.PerformClick();
+                    break;
+
+                case Keys.D7:
+                case Keys.NumPad7:
+                    NumberKey_7.PerformClick();
+                    break;
+
+                case Keys.D8 when !e.Shift:
+                case Keys.NumPad8:
+                    NumberKey_8.PerformClick();
+                    break;
+
+                case Keys.D9 when !e.Shift:
+                case Keys.NumPad9:
+                    NumberKey_9.PerformClick();
+                    break;
+
+                case Keys.D0 when !e.Shift:
+                case Keys.NumPad0:
+                    NumberKey_0.PerformClick();
+                    break;
+
+                case Keys.Decimal:
+                case Keys.Oemcomma:
+                    NumberKey_Comma.PerformClick();
+                    break;
+
+                // Operators
+
+                case Keys.Add:
+                case Keys.Oemplus when e.Shift:
+                    Add_Key.PerformClick();
+                    break;
+
+                case Keys.Subtract:
+                case Keys.OemMinus:
+                    Subtract_Key.PerformClick();
+                    break;
+
+                case Keys.Multiply:
+                case Keys.D8 when e.Shift:
+                    Multiply_Key.PerformClick();
+                    break;
+
+                case Keys.Divide:
+                case Keys.OemQuestion when !e.Shift:
+                    Divide_Key.PerformClick();
+                    break;
+
+                // Parentheses
+                case Keys.D9 when e.Shift:
+                    Left_Parentheses_Btn.PerformClick();
+                    break;
+
+                case Keys.D0 when e.Shift:
+                    Right_Parentheses_Btn.PerformClick();
+                    break;
+
+                // Result
+                case Keys.Enter:
+                case Keys.Oemplus when !e.Shift:
+                    Result_Key.PerformClick();
+                    break;
+
+                case Keys.Back:
+                    BackSpace_Btn.PerformClick();
+                    break;
+
+            }
+            // Grid copy
+            if (e.Control && e.KeyCode == Keys.C)
+            {
+                CopySelectedCells();
+                e.Handled = true;
+            }
+
+            // Paste expression
+
+            if(e.Control && e.KeyCode == Keys.V)
+            {
+                if (Clipboard.ContainsText())
+                {
+                    if(Clipboard.GetText().All(c => ("0123456789()., " + ExpressionHolder.Operators).Contains(c)))
+                    {
+                        ExpressionHolder.Expression = Clipboard.GetText().Trim();
+                        ExpressionDisplay_Label.Text = ExpressionHolder.Expression;
+                        e.Handled = true;
+                     
+                    }
+                    else
+                    {
+                        ExpressionDisplay_Label.Text = ExpressionDisplay_Label.Text;
+                    }
+                }
+            }
+
 
         }
 
-        private void UniversalNumberKey_Click(object sender, EventArgs e)
+
+        private bool WasResultPressed = false;
+
+        // Logic for result button
+        private void Result_Key_Click(object sender, EventArgs e)
         {
-            Button button = sender as Button;
-            if(button != null)
+            if (string.IsNullOrEmpty(ExpressionHolder.Expression))
             {
-                ExpressionHolder.ExpressionStringHolder += button.Text;
-                MainDisplay.Text = ExpressionHolder.ExpressionStringHolder;
+                return;
             }
+
+            if (!WasResultPressed)
+            {
+                // Try catch to catch all exceptions thrown
+                try
+                {
+                    // Empty label and append calculated result
+                    ExpressionHolder.Expression = ExpressionDisplay_Label.Text;
+                    ResultDisplay_Label.Text = string.Empty;
+                    ResultDisplay_Label.Text += ExpressionHolder.CalculateResult(ExpressionHolder.Expression);
+                    WasResultPressed = true;
+                }
+                catch (Exception ex)
+                {
+                    // Display exception message
+                    string errorMessage = ex.Message;
+                    ExpressionDisplay_Label.Text = errorMessage;
+                    WasResultPressed = false;
+                }
+            }
+            else
+            {
+                ExpressionHolder.Expression = ExpressionHolder.ContinuousResultCalculation(ResultDisplay_Label, ExpressionHolder.Expression);
+                ExpressionDisplay_Label.Text = ExpressionHolder.Expression;
+                ResultDisplay_Label.Text = string.Empty;
+                ResultDisplay_Label.Text += ExpressionHolder.CalculateResult(ExpressionHolder.Expression);
+                WasResultPressed = true;
+            }
+
+        }
+
+        // Logic for clear button
+        // Empty holder variable, then display its contents
+        // Set result display as default 0
+        private void Clear_Key_Click(object sender, EventArgs e)
+        {
+            ExpressionHolder.Expression = string.Empty;
+            ExpressionDisplay_Label.Text = ExpressionHolder.Expression;
+            ResultDisplay_Label.Text = "0";
+            WasResultPressed = false;
+
+        }
+
+        // Logic for backspace button
+        private void BackSpace_Btn_Click(object sender, EventArgs e)
+        {
+            // If string holder variable is not empty
+            if (!string.IsNullOrEmpty(ExpressionHolder.Expression))
+            {
+                // Replace current value with substring short of last character
+                ExpressionHolder.Expression = ExpressionHolder.Expression.Substring(0, ExpressionHolder.Expression.Length - 1);
+                // Display updated values
+                ExpressionDisplay_Label.Text = ExpressionHolder.Expression;
+            }
+        }
+
+        private void HistoryDataGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
         }
     }
 }

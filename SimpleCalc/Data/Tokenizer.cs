@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 
 namespace SimpleCalc.Data
 {
@@ -25,84 +26,123 @@ namespace SimpleCalc.Data
                 // Apply conditions for each character in the string
                 char ch = expression[i];
 
+
+
                 // If character is a digit, ammend it to a holder variable
                 if (char.IsDigit(ch))
                 {
                     number += ch;
                 }
 
-                // If character is "." or ",", then if it's a first character in the holder variable: add preceding 0 => 0.1
-                // Else ammend it to existing number 123.456
-                else if (ch == '.' || ch == ',')
+
+                // Switch for operators
+                switch (ch)
                 {
-                    if (number != "")
-                    {
-                        number += ch;
-                    }
-                    else
-                    {
-                        number += "0" + ch;
-                    }
+                    // If an operator is +,-,*,/ etc.
+                    case '+':
+                    case '-':
+                    case '*':
+                    case '/':
+                        // If number variable is not empty, then add number token list and clear it
+                        if (number != "")
+                        {
+                            tokensList.Add(number);
+                            number = string.Empty;
+                        }
+
+
+                        // If operator is a -
+                        // and there is more than 1 char in expression
+                        // and its a first character
+                        // and next char in expression is a digit
+                        // then add - as a number element
+                        if (expression.Length > 1 && i == 0 && ch == '-' && char.IsDigit(expression[i + 1]))
+                        {
+                            number += ch;
+                            break;
+                        }
+                        else if (expression.Length > 1 && i > 0 && ch == '-' && expression[i - 1] == '(' && char.IsDigit(expression[i + 1]))
+                        {
+                            tokensList.Add("0");
+                        }
+                            // Finally add an operator as a token on top
+                            tokensList.Add(ch.ToString());
+                        break;
+
+                    // If operator is a . or ,
+                    case '.':
+                    case ',':
+                        // If number variable is not empty, then append it to the existing value
+                        if (number != "")
+                        {
+                            number += ch;
+                        }
+                        // Or add preceding 0 if comma is first character
+                        else
+                        {
+                            number += "0" + ch;
+                        }
+                        break;
+
+                    // If operator is a (
+                    case '(':
+                        // If number variable is not empty, then add number token list and clear it
+                        if (number != "")
+                        {
+                            tokensList.Add(number);
+                            number = string.Empty;
+                            tokensList.Add("*");
+                        }
+                        // If i > 0 and previous character in the string is a digit or )
+                        // Then add preceding multiplication *
+                        else if (i > 0 && expression[i - 1] == ')')
+                        {
+                            tokensList.Add("*");
+                        }
+                        // Finally add an operator as a token on top
+                        tokensList.Add(ch.ToString());
+                        break;
+
+                    // If operator is a )
+                    case ')':
+                        // If number variable is not empty, then add number token list and clear it
+                        if (number != "")
+                        {
+                            tokensList.Add(number);
+                            number = string.Empty;
+                        }
+
+                        if (tokensList.Count > 0 && tokensList[tokensList.Count - 1] == "(")
+                        {
+                            throw new Exception("Invalid operation: Empty parentheses");
+                        }
+                        // Finally add an operator as a token on top
+                        tokensList.Add(ch.ToString());
+                        // If i > 0 and next character in the string is a digit or (
+                        // Then add following multiplication *
+                        if (i + 1 < expression.Length && (char.IsDigit(expression[i + 1]) || expression[i + 1] == '('))
+                        {
+                            tokensList.Add("*");
+                        }
+                  
+                        break;
 
                 }
-
-                // If character is an operator
-                else if ("+-*/".Contains(ch))
-                {
-                    // If number holder variable is not empty, add its value to the token list,
-                    // Clear the variable and add operator to the token list
-                    if (number != "")
-                    {
-                        tokensList.Add(number);
-                        number = string.Empty;
-                        tokensList.Add(ch.ToString());
-                    }
-
-                    // If an operator is the first item on the list, add extra zero before it => 0 +-/*
-                    else if(i == 0)
-                    {
-                        tokensList.Add("0");
-                        tokensList.Add(ch.ToString());
-                    }
-                    
-                    // Else just add the operator
-                    else
-                    {
-                        tokensList.Add(ch.ToString());
-                    }
-
-                }
-
-                // If character is a left or right parenthesis and number holder variable is not empty,
-                // Add holder variable value to the token list, clear its value and add the operator
-                else if (ch == '(' || ch == ')')
-                {
-                    if (number != "")
-                    {
-                        tokensList.Add(number);
-                        number = string.Empty;
-                        tokensList.Add(ch.ToString());
-                    }
-                    else
-                    {
-                        tokensList.Add(ch.ToString());
-                    }
-                }
-
             }
 
-            // If there is any lingering value in holder variable, add it as a token to the list
+            // If there is any lingering value in number variable, add it as a token to the list
             if(number != string.Empty)
             {
                 tokensList.Add(number);
             }
 
-            // Normalize any values in token list which may consist of "," or "."
+            // Normalize any values in tokens list which may consist of "," or "."
             for (int i = 0; i < tokensList.Count; i++)
             {
                 tokensList[i] = tokensList[i].Replace(',', '.');
             }
 
+            Console.WriteLine(string.Join(", ", tokensList));
             return tokensList;
 
         }

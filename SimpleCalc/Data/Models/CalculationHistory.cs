@@ -12,7 +12,7 @@ namespace SimpleCalc.Data.Models
         [Key] //Marks Id as primary key in sql
         public int Id { get; set; }
         public string Expression { get; set; } = string.Empty;
-        public double result { get; set; }
+        public double Result { get; set; }
         public DateTime Date { get; set; } = DateTime.Now;
     }
 }
